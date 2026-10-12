@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VELNORA - Bottle Scan & Win Cashback</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        },
+                        gold: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        }
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                        'bounce-subtle': 'bounceSubtle 2s infinite',
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 15px rgba(20, 184, 166, 0.4)' },
+                            '50%': { boxShadow: '0 0 30px rgba(20, 184, 166, 0.8)' },
+                        },
+                        bounceSubtle: {
+                            '0%, 100%': { transform: 'translateY(-2%)' },
+                            '50%': { transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .scratch-container {
+            position: relative;
+            user-select: none;
+        }
+        #scratch-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            touch-action: none;
+            border-radius: 1rem;
+        }
+        .gradient-border {
+            background: linear-gradient(135deg, #14b8a6, #3b82f6, #f59e0b);
+            padding: 2px;
+            border-radius: 1.25rem;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-brand-500 selection:text-white">
+
+    <!-- Main Header -->
+    <header class="sticky top-0 z-40 backdrop-blur-md bg-slate-950/80 border-b border-slate-800/80">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-500 to-blue-500 flex items-center justify-center font-black text-xl text-white shadow-lg shadow-brand-500/30">
+                    V
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold tracking-wider bg-gradient-to-r from-white via-slate-200 to-brand-400 bg-clip-text text-transparent">VELNORA</span>
+                    <span class="block text-[10px] text-brand-400 font-semibold tracking-widest uppercase">Premium Hygiene</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="tab-demo-btn" onclick="switchView('demo')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-500 text-slate-950 transition-all shadow-md shadow-brand-500/20">
+                    <i data-lucide="smartphone" class="inline w-3.5 h-3.5 mr-1">prefix</i> Live Demo
+                </button>
+                <button id="tab-code-btn" onclick="switchView('code')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-all">
+                    <i data-lucide="code" class="inline w-3.5 h-3.5 mr-1"></i> Shopify Setup & Code
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- DEMO VIEW -->
+    <main id="demo-view" class="flex-grow max-w-5xl mx-auto px-4 py-6 w-full flex flex-col items-center">
+        
+        <!-- Hero Section Banner -->
+        <div class="text-center max-w-2xl mb-6">
+            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-800/80 border border-brand-500/30 text-brand-400 text-xs font-semibold mb-3">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                <span>Official Cashback & Rewards Portal</span>
+            </div>
+            <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-3 leading-tight">
+                Scan Bottle & Win Instant <span class="bg-gradient-to-r from-emerald-400 via-brand-400 to-amber-300 bg-clip-text text-transparent">₹5 to ₹10 Cashback! 🎉</span>
+            </h1>
+            <p class="text-sm md:text-base text-slate-400 leading-relaxed">
+                Scan the QR code printed on the back of your VELNORA bottle, enter your details, and receive guaranteed instant money directly to your UPI!
+            </p>
+        </div>
+
+        <!-- Bumper Prize Announcement Bar -->
+        <div class="w-full max-w-md bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 border border-amber-500/40 rounded-2xl p-3.5 mb-6 text-center shadow-lg backdrop-blur-sm relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-12 h-12 bg-amber-500/20 rounded-full blur-xl"></div>
+            <div class="flex items-center justify-center space-x-2 text-amber-300 font-bold text-sm">
+                <i data-lucide="gift" class="w-5 h-5 text-amber-400 animate-bounce"></i>
+                <span>MEGA BUMPER OFFER! 🏆</span>
+            </div>
+            <p class="text-xs text-amber-100/90 mt-1">
+                Every entry gets automatically registered for the <strong class="text-white underline decoration-amber-400">10 Lucky Winners Draw to win a Premium VELNORA Head Wiper!</strong>
+            </p>
+        </div>
+
+        <!-- Interactive Card Form -->
+        <div class="w-full max-w-md gradient-border shadow-2xl mb-8">
+            <div class="bg-slate-900 rounded-[1.2rem] p-6 space-y-5">
+                
+                <!-- STEP 1: INPUT FORM -->
+                <div id="step-form" class="space-y-4">
+                    <div class="border-b border-slate-800 pb-3 flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-400 tracking-wider uppercase flex items-center">
+                            <span class="w-5 h-5 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center mr-1.5 text-[10px]">1</span> Enter Details
+                        </span>
+                        <span class="text-[11px] text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center">
+                            <i data-lucide="shield-check" class="w-3 h-3 mr-1"></i> Verified Promo
+                        </span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Phone Number or UPI ID (For Direct Cashback)</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                                <i data-lucide="wallet" class="w-4 h-4"></i>
+                            </div>
+                            <input type="text" id="user-payout-id" placeholder="9876543210 or yourname@upi" class="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-700/80 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition">
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-1">Cashback will be credited directly to this GPay/PayTM/UPI ID.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Bottle Serial Number / Code (On Back Label)</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                                <i data-lucide="qr-code" class="w-4 h-4"></i>
+                            </div>
+                            <input type="text" id="serial-number" uppercase placeholder="e.g., VEL89A42" class="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-700/80 rounded-xl text-sm text-white uppercase tracking-wider placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition">
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-1">Found near the barcode at the back of VELNORA bottle.</p>
+                    </div>
+
+                    <div id="error-message" class="hidden p-2.5 rounded-lg bg-red-950/60 border border-red-500/30 text-xs text-red-300 text-center font-medium"></div>
+
+                    <button onclick="processClaim()" class="w-full py-3 bg-gradient-to-r from-brand-500 to-emerald-500 text-slate-950 font-bold text-sm rounded-xl shadow-lg shadow-brand-500/30 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center space-x-2">
+                        <span>VERIFY & CLAIM CASHBACK</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- STEP 2: SCRATCH CARD INTERFACE -->
+                <div id="step-scratch" class="hidden space-y-4">
+                    <div class="text-center">
+                        <span class="inline-block px-3 py-1 rounded-full bg-brand-950 border border-brand-500/30 text-brand-400 text-xs font-bold mb-1">
+                            🎉 Serial Number Verified!
+                        </span>
+                        <h3 class="text-lg font-bold text-white">Scratch to Reveal Your Prize</h3>
+                        <p class="text-xs text-slate-400">Drag your finger or mouse over the card below</p>
+                    </div>
+
+                    <div class="scratch-container w-full h-48 bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 rounded-2xl border-2 border-slate-700 p-4 flex flex-col items-center justify-center text-center overflow-hidden relative shadow-inner">
+                        <!-- Prize Content Underneath -->
+                        <div id="prize-container" class="space-y-2 flex flex-col items-center justify-center h-full w-full">
+                            <div class="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-2xl animate-pulse">
+                                🎁
+                            </div>
+                            <div id="prize-amount-text" class="text-3xl font-black text-amber-400 tracking-tight">
+                                ₹8 Cashback!
+                            </div>
+                            <p id="prize-subtext" class="text-xs text-slate-300 max-w-[220px]">
+                                Plus registered for the <strong class="text-white">10 Lucky Head Wiper Winners</strong> draw!
+                            </p>
+                        </div>
+
+                        <!-- Canvas overlay to scratch -->
+                        <canvas id="scratch-canvas" width="360" height="192"></canvas>
+                    </div>
+
+                    <button id="claim-payout-btn" disabled onclick="transferCashback()" class="w-full py-3 bg-slate-800 text-slate-500 font-bold text-sm rounded-xl border border-slate-700 transition-all flex items-center justify-center space-x-2 cursor-not-allowed">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        <span>Scratch Above To Unlock Payout</span>
+                    </button>
+                </div>
+
+                <!-- STEP 3: SUCCESS / PAYOUT STATUS -->
+                <div id="step-success" class="hidden space-y-4 text-center py-4">
+                    <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/40 animate-bounce-subtle">
+                        <i data-lucide="check-circle-2" class="w-10 h-10"></i>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Cashback Transfer Initiated!</h3>
+                        <p class="text-xs text-slate-400 mt-1">Payout processed for <span id="display-user-id" class="text-brand-400 font-semibold"></span></p>
+                    </div>
+
+                    <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-left">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Amount Sent:</span>
+                            <span id="payout-amount-display" class="font-bold text-emerald-400">₹8.00</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Status:</span>
+                            <span class="text-emerald-400 font-semibold flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5 animate-ping"></span> Processing Instant UPI Transfer</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Bumper Entry Ticket ID:</span>
+                            <span id="ticket-id-display" class="font-mono text-slate-300">VEL-88291</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-950/40 border border-amber-500/30 rounded-xl p-3 text-left">
+                        <p class="text-xs text-amber-200/90 leading-relaxed">
+                            <strong>🎉 Mega Draw Entry Confirmed!</strong> Winners for the 10 VELNORA Head Wipers will be announced on our official WhatsApp & Instagram handle at the end of the month!
+                        </p>
+                    </div>
+
+                    <button onclick="resetDemo()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition">
+                        Test Another Serial Number
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- How It Works Section -->
+        <div class="w-full max-w-4xl mt-4 mb-12">
+            <h2 class="text-xl font-bold text-center text-white mb-6">How to Claim Your VELNORA Cashback 3-Step Guide</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 text-center flex flex-col items-center">
+                    <div class="w-12 h-12 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center font-bold text-lg mb-3 border border-brand-500/20">
+                        1
+                    </div>
+                    <h3 class="font-bold text-white text-sm mb-1">Scan Bottle QR Code</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Scan the QR code printed on the back label of your VELNORA Cleaner bottle with your phone camera.</p>
+                </div>
+
+                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 text-center flex flex-col items-center">
+                    <div class="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold text-lg mb-3 border border-blue-500/20">
+                        2
+                    </div>
+                    <h3 class="font-bold text-white text-sm mb-1">Enter Serial Code</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Type your GPay/PayTM/UPI ID and the unique serial code printed on the bottle label.</p>
+                </div>
+
+                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 text-center flex flex-col items-center">
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-lg mb-3 border border-amber-500/20">
+                        3
+                    </div>
+                    <h3 class="font-bold text-white text-sm mb-1">Instant Cash & Head Wiper Draw</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Scratch to reveal ₹5–₹10 guaranteed cashback + automatic entry to win 1 of 10 Head Wipers!</p>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- CODE / SETUP VIEW -->
+    <main id="code-view" class="hidden flex-grow max-w-5xl mx-auto px-4 py-6 w-full space-y-6">
+        
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+            <h2 class="text-2xl font-bold text-white mb-2">Merchant Setup Guide: Shopify & QR Cashback</h2>
+            <p class="text-sm text-slate-400 leading-relaxed mb-4">
+                Follow this simple step-by-step procedure to print QR codes on VELNORA bottles and connect your Shopify store with automated UPI payouts.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <h3 class="font-bold text-brand-400 text-sm mb-2 flex items-center">
+                        <i data-lucide="printer" class="w-4 h-4 mr-2"></i> 1. Bottle Label QR & Serial Print
+                    </h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Print a single QR code on the back label directing customers to: <br>
+                        <code class="text-amber-400 bg-slate-900 px-1 py-0.5 rounded text-[11px]">https://yourstore.com/pages/scan-and-win</code>
+                        <br><br>
+                        Underneath the QR code, print a 6 to 8 digit unique serial code batch (e.g. <code class="text-slate-200">VEL-10294</code>).
+                    </p>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <h3 class="font-bold text-emerald-400 text-sm mb-2 flex items-center">
+                        <i data-lucide="arrow-right-left" class="w-4 h-4 mr-2"></i> 2. Direct UPI Cashfree / RazorpayX Payouts
+                    </h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        To automate ₹5–₹10 transfers directly to customer bank accounts, connect your Shopify store to <strong>RazorpayX Payout API</strong> or <strong>Cashfree Disburser API</strong>.
+                        Alternatively, collect requests into Shopify Form or Google Sheets and process payouts using bulk UPI transfer.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Copyable Liquid Code Snippet -->
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <label class="text-sm font-bold text-white flex items-center">
+                        <i data-lucide="code-2" class="w-4 h-4 mr-2 text-brand-400"></i> Custom Shopify Section Liquid Code Snippet
+                    </label>
+                    <button onclick="copyLiquidCode()" class="px-3 py-1 bg-brand-500 text-slate-950 font-bold text-xs rounded-lg hover:bg-brand-400 transition flex items-center">
+                        <i data-lucide="copy" class="w-3.5 h-3.5 mr-1"></i> Copy Code
+                    </button>
+                </div>
+
+                <pre id="liquid-code-box" class="bg-slate-950 border border-slate-800 p-4 rounded-xl text-xs text-slate-300 overflow-x-auto max-h-96 font-mono leading-relaxed select-all">
+{% comment %}
+  VELNORA - QR Code Cashback Landing Section
+  File Name: sections/velnora-qr-cashback.liquid
+{% endcomment %}
+
+&lt;div class="velnora-cashback-section bg-slate-950 text-white py-12 px-4"&gt;
+  &lt;div class="max-w-xl mx-auto text-center"&gt;
+    &lt;h2 class="text-3xl font-extrabold text-brand-400"&gt;{{ section.settings.heading | default: "VELNORA Bottle Scan & Win!" }}&lt;/h2&gt;
+    &lt;p class="text-sm text-slate-400 mt-2"&gt;{{ section.settings.subheading | default: "Enter serial number below to claim ₹5 - ₹10 Cashback!" }}&lt;/p&gt;
+
+    &lt;form id="velnora-claim-form" class="mt-6 bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4"&gt;
+      &lt;div class="text-left"&gt;
+        &lt;label class="block text-xs font-semibold text-slate-300 mb-1"&gt;Phone Number / UPI ID&lt;/label&gt;
+        &lt;input type="text" id="shopify-upi-id" required placeholder="9876543210 or name@upi" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white"&gt;
+      &lt;/div&gt;
+
+      &lt;div class="text-left"&gt;
+        &lt;label class="block text-xs font-semibold text-slate-300 mb-1"&gt;Bottle Serial Number&lt;/label&gt;
+        &lt;input type="text" id="shopify-serial-code" required placeholder="e.g. VEL89A42" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm uppercase text-white"&gt;
+      &lt;/div&gt;
+
+      &lt;button type="button" onclick="handleShopifyClaim()" class="w-full py-3 bg-teal-500 font-bold text-slate-950 rounded-xl shadow-lg hover:bg-teal-400"&gt;
+        Claim Cashback Now 🎉
+      &lt;/button&gt;
+    &lt;/form&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+{% schema %}
+{
+  "name": "VELNORA Cashback Promo",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "VELNORA Bottle Scan & Win!"
+    },
+    {
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "Enter serial number below to claim ₹5 - ₹10 Cashback!"
+    }
+  ],
+  "presets": [
+    {
+      "name": "VELNORA Cashback Promo"
+    }
+  ]
+}
+{% endschema %}</pre>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-slate-950 py-6 text-center text-xs text-slate-500">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p>© 2026 VELNORA Products. All rights reserved. Cashback offer valid on authentic bottles.</p>
+            <div class="flex space-x-4">
+                <a href="#" class="hover:text-slate-400">Terms & Conditions</a>
+                <a href="#" class="hover:text-slate-400">Privacy Policy</a>
+                <a href="#" class="hover:text-slate-400">Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-message" class="fixed bottom-5 right-5 bg-slate-800 text-slate-100 text-xs px-4 py-3 rounded-xl border border-slate-700 shadow-2xl transition-all opacity-0 translate-y-5 pointer-events-none z-50 flex items-center space-x-2">
+        <i data-lucide="info" class="w-4 h-4 text-brand-400"></i>
+        <span id="toast-text">Message</span>
+    </div>
+
+    <script>
+        // Global State Variable
+        let currentWinningAmount = 5;
+        let isScratchedSufficiently = false;
+
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Switch View Functions (Demo vs Shopify Code)
+        function switchView(view) {
+            const demoView = document.getElementById('demo-view');
+            const codeView = document.getElementById('code-view');
+            const demoBtn = document.getElementById('tab-demo-btn');
+            const codeBtn = document.getElementById('tab-code-btn');
+
+            if (view === 'demo') {
+                demoView.classList.remove('hidden');
+                codeView.classList.add('hidden');
+                demoBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-500 text-slate-950 transition-all shadow-md shadow-brand-500/20";
+                codeBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-all";
+            } else {
+                demoView.classList.add('hidden');
+                codeView.classList.remove('hidden');
+                codeBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-500 text-slate-950 transition-all shadow-md shadow-brand-500/20";
+                demoBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-all";
+            }
+        }
+
+        // Play Sound FX using Tone.js
+        function playWinSound() {
+            try {
+                const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                const now = Tone.now();
+                synth.triggerAttackRelease("C5", "8n", now);
+                synth.triggerAttackRelease("E5", "8n", now + 0.1);
+                synth.triggerAttackRelease("G5", "8n", now + 0.2);
+                synth.triggerAttackRelease("C6", "4n", now + 0.3);
+            } catch (e) {
+                console.log("Audio play allowed after user interaction");
+            }
+        }
+
+        // Process Claim Form Validation
+        function processClaim() {
+            const userPhoneUpi = document.getElementById('user-payout-id').value.trim();
+            const serialNumber = document.getElementById('serial-number').value.trim();
+            const errorMsg = document.getElementById('error-message');
+
+            if (!userPhoneUpi || userPhoneUpi.length < 5) {
+                errorMsg.innerText = "Please enter a valid Phone Number or UPI ID.";
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+
+            if (!serialNumber || serialNumber.length < 4) {
+                errorMsg.innerText = "Please enter a valid Serial Code printed on the bottle.";
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+
+            errorMsg.classList.add('hidden');
+
+            // Randomize cashback outcome between ₹5 and ₹10
+            const possibleAmounts = [5, 6, 7, 8, 9, 10];
+            currentWinningAmount = possibleAmounts[Math.floor(Math.random() * possibleAmounts.length)];
+
+            document.getElementById('prize-amount-text').innerText = `₹${currentWinningAmount} Cashback!`;
+            document.getElementById('payout-amount-display').innerText = `₹${currentWinningAmount}.00`;
+            document.getElementById('display-user-id').innerText = userPhoneUpi;
+
+            // Transition to Scratch Step
+            document.getElementById('step-form').classList.add('hidden');
+            document.getElementById('step-scratch').classList.remove('hidden');
+
+            // Initialize Scratch Canvas
+            initScratchCanvas();
+        }
+
+        function initScratchCanvas() {
+            const canvas = document.getElementById('scratch-canvas');
+            const ctx = canvas.getContext('2d');
+            isScratchedSufficiently = false;
+
+            // Cover canvas with silver scratch layer
+            ctx.fillStyle = '#475569';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Add text overlay on scratch canvas
+            ctx.fillStyle = '#cbd5e1';
+            ctx.font = 'bold 16px Plus Jakarta Sans, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('✨ SCRATCH HERE WITH FINGER ✨', canvas.width / 2, canvas.height / 2 + 5);
+
+            let isDrawing = false;
+
+            function scratch(x, y) {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath();
+                ctx.arc(x, y, 22, 0, Math.PI * 2);
+                ctx.fill();
+                checkScratchPercentage();
+            }
+
+            function getPointerPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: (clientX - rect.left) * (canvas.width / rect.width),
+                    y: (clientY - rect.top) * (canvas.height / rect.height)
+                };
+            }
+
+            // Mouse Events
+            canvas.addEventListener('mousedown', (e) => { isDrawing = true; const p = getPointerPos(e); scratch(p.x, p.y); });
+            canvas.addEventListener('mousemove', (e) => { if (isDrawing) { const p = getPointerPos(e); scratch(p.x, p.y); } });
+            canvas.addEventListener('mouseup', () => isDrawing = false);
+
+            // Touch Events
+            canvas.addEventListener('touchstart', (e) => { isDrawing = true; const p = getPointerPos(e); scratch(p.x, p.y); e.preventDefault(); });
+            canvas.addEventListener('touchmove', (e) => { if (isDrawing) { const p = getPointerPos(e); scratch(p.x, p.y); } e.preventDefault(); });
+            canvas.addEventListener('touchend', () => isDrawing = false);
+        }
+
+        function checkScratchPercentage() {
+            if (isScratchedSufficiently) return;
+
+            const canvas = document.getElementById('scratch-canvas');
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let clearedPixels = 0;
+
+            for (let i = 3; i < imageData.data.length; i += 4) {
+                if (imageData.data[i] === 0) {
+                    clearedPixels++;
+                }
+            }
+
+            const percentage = (clearedPixels / (canvas.width * canvas.height)) * 100;
+
+            if (percentage > 35) {
+                isScratchedSufficiently = true;
+                unlockPayoutButton();
+            }
+        }
+
+        function unlockPayoutButton() {
+            const btn = document.getElementById('claim-payout-btn');
+            btn.disabled = false;
+            btn.className = "w-full py-3 bg-gradient-to-r from-emerald-500 to-brand-500 text-slate-950 font-bold text-sm rounded-xl shadow-lg shadow-emerald-500/20 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center space-x-2 animate-bounce-subtle cursor-pointer";
+            btn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i><span>CLAIM ₹${currentWinningAmount} CASHBACK TO UPI</span>`;
+            lucide.createIcons();
+
+            // Trigger confetti
+            confetti({
+                particleCount: 80,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+
+            playWinSound();
+        }
+
+        function transferCashback() {
+            if (!isScratchedSufficiently) return;
+
+            // Generate Random Ticket ID for Bumper Draw
+            const ticketId = 'VEL-' + Math.floor(10000 + Math.random() * 90000);
+            document.getElementById('ticket-id-display').innerText = ticketId;
+
+            document.getElementById('step-scratch').classList.add('hidden');
+            document.getElementById('step-success').classList.remove('hidden');
+
+            confetti({
+                particleCount: 150,
+                spread: 90,
+                origin: { y: 0.5 }
+            });
+        }
+
+        function resetDemo() {
+            document.getElementById('user-payout-id').value = '';
+            document.getElementById('serial-number').value = '';
+            document.getElementById('step-success').classList.add('hidden');
+            document.getElementById('step-form').classList.remove('hidden');
+        }
+
+        function copyLiquidCode() {
+            const codeText = document.getElementById('liquid-code-box').innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                showToast("Shopify Liquid Code copied to clipboard!");
+            }).catch(() => {
+                // Fallback for copy
+                const textarea = document.createElement('textarea');
+                textarea.value = codeText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast("Shopify Liquid Code copied!");
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast-message');
+            document.getElementById('toast-text').innerText = msg;
+            toast.classList.remove('opacity-0', 'translate-y-5', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-5', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
