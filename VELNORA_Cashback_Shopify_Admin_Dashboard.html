@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VELNORA Admin - QR Cashback & Rewards Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        },
+                        accent: {
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-slate-950 text-slate-100 min-h-screen flex flex-col md:flex-row overflow-x-hidden selection:bg-brand-500 selection:text-slate-950">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-full md:w-64 bg-slate-900 border-r border-slate-800 flex-shrink-0 flex flex-col justify-between z-30">
+        <div>
+            <!-- Admin Header Logo -->
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-500 to-indigo-500 flex items-center justify-center font-black text-lg text-slate-950 shadow-md shadow-brand-500/20">
+                        V
+                    </div>
+                    <div>
+                        <span class="font-extrabold tracking-wider text-base text-white">VELNORA</span>
+                        <span class="block text-[10px] text-brand-400 font-bold uppercase tracking-widest">Admin Portal v2.4</span>
+                    </div>
+                </div>
+                <span class="md:hidden text-xs bg-brand-500/20 text-brand-400 px-2 py-0.5 rounded-full border border-brand-500/30">Shopify</span>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="p-3 space-y-1">
+                <button onclick="switchTab('analytics')" id="nav-analytics" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold bg-brand-500/10 text-brand-400 border border-brand-500/30 transition">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    <span>Dashboard Analytics</span>
+                </button>
+                <button onclick="switchTab('serials')" id="nav-serials" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition">
+                    <i data-lucide="qr-code" class="w-4 h-4"></i>
+                    <span>Serial Code Generator</span>
+                </button>
+                <button onclick="switchTab('payouts')" id="nav-payouts" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition">
+                    <i data-lucide="credit-card" class="w-4 h-4"></i>
+                    <span>Payout Gateways</span>
+                </button>
+                <button onclick="switchTab('rewards')" id="nav-rewards" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition">
+                    <i data-lucide="sliders" class="w-4 h-4"></i>
+                    <span>Rewards & Head Wiper</span>
+                </button>
+                <button onclick="switchTab('claims')" id="nav-claims" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition">
+                    <i data-lucide="history" class="w-4 h-4"></i>
+                    <span>Claims Audit Log</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- System Sync & Gateway Indicator -->
+        <div class="p-4 border-t border-slate-800 space-y-3">
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80">
+                <div class="flex items-center justify-between text-[11px] mb-1">
+                    <span class="text-slate-400">Gateway Status</span>
+                    <span id="gateway-status-pill" class="text-emerald-400 font-bold flex items-center">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span> RazorpayX
+                    </span>
+                </div>
+                <div class="flex justify-between items-center text-[10px]">
+                    <span class="text-slate-500">Payout Balance:</span>
+                    <span class="font-bold text-slate-200" id="payout-balance-display">₹12,450.00</span>
+                </div>
+            </div>
+
+            <button onclick="openWebhookModal()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg border border-slate-700 transition flex items-center justify-center space-x-1.5">
+                <i data-lucide="webhook" class="w-3.5 h-3.5 text-brand-400"></i>
+                <span>Shopify Sync Webhook</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-grow flex flex-col min-w-0 overflow-y-auto custom-scrollbar">
+        
+        <!-- Top Navbar -->
+        <header class="bg-slate-900 border-b border-slate-800 px-6 py-3.5 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md bg-slate-900/90">
+            <div class="flex items-center space-x-3">
+                <h1 id="page-title" class="text-lg font-bold text-white tracking-tight">Dashboard Overview</h1>
+                <span class="text-xs bg-brand-500/10 text-brand-400 px-2.5 py-0.5 rounded-full border border-brand-500/20 font-semibold hidden sm:inline-block">Shopify Live Store</span>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <button onclick="exportCSVData()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 transition flex items-center space-x-1.5">
+                    <i data-lucide="download" class="w-3.5 h-3.5 text-brand-400"></i>
+                    <span class="hidden sm:inline">Export Audit CSV</span>
+                </button>
+                <div class="h-6 w-px bg-slate-800"></div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-brand-400">
+                        VA
+                    </div>
+                    <span class="text-xs font-medium text-slate-300 hidden md:inline">Velnora Admin</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- TAB 1: ANALYTICS DASHBOARD -->
+        <main id="tab-analytics-content" class="p-6 space-y-6">
+            
+            <!-- KPI Cards Row -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <!-- Total Scans -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400">Total QR Scans</p>
+                            <h3 class="text-2xl font-extrabold text-white mt-1" id="kpi-scans">1,482</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 flex items-center justify-center">
+                            <i data-lucide="qr-code" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-emerald-400 mt-3 font-medium flex items-center">
+                        <i data-lucide="trending-up" class="w-3.5 h-3.5 mr-1"></i> +18.4% this week
+                    </p>
+                </div>
+
+                <!-- Cashback Paid -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400">Cashback Distributed</p>
+                            <h3 class="text-2xl font-extrabold text-white mt-1" id="kpi-cashback">₹9,845</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                            <i data-lucide="indian-rupee" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-emerald-400 mt-3 font-medium flex items-center">
+                        <i data-lucide="check-circle" class="w-3.5 h-3.5 mr-1"></i> 100% UPI Successful
+                    </p>
+                </div>
+
+                <!-- Serial Claims Rate -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400">Serials Claimed</p>
+                            <h3 class="text-2xl font-extrabold text-white mt-1" id="kpi-claimed">1,240 <span class="text-xs font-normal text-slate-500">/ 2,000</span></h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                            <i data-lucide="package-check" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+                        <div class="bg-indigo-500 h-full rounded-full" style="width: 62%;"></div>
+                    </div>
+                </div>
+
+                <!-- Head Wiper Bumper Winners -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400">Head Wiper Winners</p>
+                            <h3 class="text-2xl font-extrabold text-amber-400 mt-1" id="kpi-winners">4 <span class="text-xs font-normal text-slate-500">/ 10 Picked</span></h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+                            <i data-lucide="trophy" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-amber-300 mt-3 font-medium flex items-center">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 mr-1"></i> 6 Wiper Prizes Remaining
+                    </p>
+                </div>
+
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Scan & Claim Trend Chart -->
+                <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-sm font-bold text-white flex items-center">
+                            <i data-lucide="activity" class="w-4 h-4 mr-2 text-brand-400"></i> Daily Claims & Scans Trend
+                        </h2>
+                        <span class="text-xs text-slate-400">Last 7 Days</span>
+                    </div>
+                    <div class="h-64 w-full">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Reward Distribution Pie Chart -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                    <h2 class="text-sm font-bold text-white flex items-center">
+                        <i data-lucide="pie-chart" class="w-4 h-4 mr-2 text-indigo-400"></i> Reward Cash Tier Share
+                    </h2>
+                    <div class="h-64 w-full flex items-center justify-center">
+                        <canvas id="rewardPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Payout Audit Feed -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-sm font-bold text-white flex items-center">
+                        <i data-lucide="clock" class="w-4 h-4 mr-2 text-emerald-400"></i> Real-Time Recent Payout Activity
+                    </h2>
+                    <button onclick="switchTab('claims')" class="text-xs text-brand-400 hover:underline">View All Claims →</button>
+                </div>
+
+                <div class="divide-y divide-slate-800/60" id="live-activity-feed">
+                    <!-- Populated dynamically by JavaScript -->
+                </div>
+            </div>
+
+        </main>
+
+        <!-- TAB 2: SERIAL NUMBER GENERATOR -->
+        <main id="tab-serials-content" class="hidden p-6 space-y-6">
+            
+            <!-- Batch Generator Box -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                <div>
+                    <h2 class="text-base font-bold text-white">Batch Serial Code Generator</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Generate unique alphanumeric codes to print on bottle labels alongside the QR link.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Prefix Code</label>
+                        <input type="text" id="gen-prefix" value="VEL" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm uppercase text-white font-mono focus:border-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Start Serial Number</label>
+                        <input type="number" id="gen-start" value="1001" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white font-mono focus:border-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Quantity to Generate</label>
+                        <input type="number" id="gen-qty" value="50" min="1" max="500" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white font-mono focus:border-brand-500 focus:outline-none">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="generateBatchSerials()" class="w-full py-2.5 bg-brand-500 hover:bg-brand-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition flex items-center justify-center space-x-1.5">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                            <span>Generate Serial Batch</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Serial Codes Table with Filters -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="serial-search" placeholder="Search Serial or UPI..." onkeyup="filterSerialsTable()" class="px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 w-64">
+                        <select id="serial-status-filter" onchange="filterSerialsTable()" class="px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-brand-500">
+                            <option value="ALL">All Status</option>
+                            <option value="Unused">Unused Only</option>
+                            <option value="Claimed">Claimed Only</option>
+                            <option value="Blocked">Blocked</option>
+                        </select>
+                    </div>
+
+                    <div class="flex space-x-2">
+                        <button onclick="printQRCodes()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition flex items-center space-x-1">
+                            <i data-lucide="printer" class="w-3.5 h-3.5 text-brand-400"></i>
+                            <span>Print Labels Sheet</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950 uppercase text-[10px] tracking-wider text-slate-400 font-bold border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Serial Code</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3">Reward Value</th>
+                                <th class="p-3">Claimed By (UPI)</th>
+                                <th class="p-3">Date Claimed</th>
+                                <th class="p-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="serials-table-body" class="divide-y divide-slate-800/60 font-mono">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        </main>
+
+        <!-- TAB 3: PAYOUT GATEWAYS -->
+        <main id="tab-payouts-content" class="hidden p-6 space-y-6">
+            
+            <div class="max-w-3xl space-y-6">
+                <!-- Gateway Selector Cards -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <h2 class="text-base font-bold text-white">Select Active Automated Payout Engine</h2>
+                    <p class="text-xs text-slate-400">Integrated payout gateways automatically transfer ₹5–₹10 directly to customer UPI addresses upon scanning.</p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                        <label class="cursor-pointer border border-brand-500 bg-brand-500/10 p-4 rounded-xl flex flex-col items-center text-center space-y-2 relative" id="gw-card-razorpay">
+                            <input type="radio" name="payout_gw" value="RazorpayX" checked onchange="selectGateway('RazorpayX')" class="hidden">
+                            <span class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs">R</span>
+                            <span class="text-xs font-bold text-white">RazorpayX</span>
+                            <span class="text-[10px] text-emerald-400 font-semibold">Active Engine</span>
+                        </label>
+
+                        <label class="cursor-pointer border border-slate-800 bg-slate-950 p-4 rounded-xl flex flex-col items-center text-center space-y-2 relative" id="gw-card-cashfree">
+                            <input type="radio" name="payout_gw" value="Cashfree" onchange="selectGateway('Cashfree')" class="hidden">
+                            <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">C</span>
+                            <span class="text-xs font-bold text-slate-300">Cashfree Disburser</span>
+                            <span class="text-[10px] text-slate-500">Standby</span>
+                        </label>
+
+                        <label class="cursor-pointer border border-slate-800 bg-slate-950 p-4 rounded-xl flex flex-col items-center text-center space-y-2 relative" id="gw-card-paytm">
+                            <input type="radio" name="payout_gw" value="Paytm" onchange="selectGateway('Paytm')" class="hidden">
+                            <span class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs">P</span>
+                            <span class="text-xs font-bold text-slate-300">Paytm Payouts</span>
+                            <span class="text-[10px] text-slate-500">Standby</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- API Credentials Config -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <h2 class="text-base font-bold text-white flex items-center">
+                        <i data-lucide="key" class="w-4 h-4 mr-2 text-brand-400"></i> API Keys & Account Credentials
+                    </h2>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">RazorpayX Key ID</label>
+                            <input type="text" id="api-key-id" value="rzp_live_K892019482A" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-mono focus:border-brand-500 focus:outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">RazorpayX Key Secret</label>
+                            <input type="password" id="api-key-secret" value="••••••••••••••••••••••••" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-mono focus:border-brand-500 focus:outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">RazorpayX Payout Account Number</label>
+                            <input type="text" id="api-acc-num" value="23232300192830" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-mono focus:border-brand-500 focus:outline-none">
+                        </div>
+
+                        <div class="pt-2 flex space-x-3">
+                            <button onclick="testGatewayConnection()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 transition flex items-center space-x-1.5">
+                                <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i>
+                                <span>Test API Connection</span>
+                            </button>
+                            <button onclick="saveGatewaySettings()" class="px-5 py-2.5 bg-brand-500 hover:bg-brand-400 text-slate-950 font-bold text-xs rounded-xl transition">
+                                Save Gateway Credentials
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Auto Payout Rules -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <h2 class="text-base font-bold text-white">Auto-Payout Threshold Rules</h2>
+                    
+                    <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
+                        <div>
+                            <h3 class="text-xs font-bold text-white">Enable Instant UPI Auto Payout</h3>
+                            <p class="text-[11px] text-slate-400">Automatically trigger UPI transfer as soon as user scratches the card.</p>
+                        </div>
+                        <input type="checkbox" checked class="w-4 h-4 accent-brand-500 rounded cursor-pointer">
+                    </div>
+
+                    <div class="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
+                        <div>
+                            <h3 class="text-xs font-bold text-white">Daily Maximum Payout Cap</h3>
+                            <p class="text-[11px] text-slate-400">Stop payouts automatically if total daily cashback exceeds budget.</p>
+                        </div>
+                        <input type="number" value="5000" class="w-28 p-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-right font-mono text-white">
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- TAB 4: REWARDS & HEAD WIPER CONTROL -->
+        <main id="tab-rewards-content" class="hidden p-6 space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Probability & Amount Range Controls -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
+                    <div>
+                        <h2 class="text-base font-bold text-white">Cashback Tier Probability Engine</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Adjust how frequently users get ₹5, ₹7, or ₹10 when scratching.</p>
+                    </div>
+
+                    <div class="space-y-4 pt-2">
+                        <div>
+                            <div class="flex justify-between text-xs font-semibold mb-1">
+                                <span class="text-slate-300">₹5 Cashback Weight</span>
+                                <span class="text-brand-400 font-mono" id="val-p5">50% Probability</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="50" oninput="updateProbabilities('p5', this.value)" class="w-full accent-brand-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-semibold mb-1">
+                                <span class="text-slate-300">₹7 Cashback Weight</span>
+                                <span class="text-brand-400 font-mono" id="val-p7">35% Probability</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="35" oninput="updateProbabilities('p7', this.value)" class="w-full accent-brand-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-semibold mb-1">
+                                <span class="text-slate-300">₹10 Cashback Weight</span>
+                                <span class="text-brand-400 font-mono" id="val-p10">15% Probability</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="15" oninput="updateProbabilities('p10', this.value)" class="w-full accent-brand-500">
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800 flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Calculated Average Payout: <strong class="text-white font-mono">₹6.45 / Bottle</strong></span>
+                        <button onclick="saveRewardWeights()" class="px-4 py-2 bg-brand-500 text-slate-950 font-bold text-xs rounded-xl hover:bg-brand-400 transition">Save Probability Rules</button>
+                    </div>
+                </div>
+
+                <!-- 10 Lucky Head Wiper Winners Controller -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h2 class="text-base font-bold text-amber-400 flex items-center">
+                                <i data-lucide="trophy" class="w-4 h-4 mr-1.5"></i> Head Wiper Mega Draw (10 Winners)
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-0.5">Select and manage the 10 lucky winners for the VELNORA Premium Head Wiper gift.</p>
+                        </div>
+                        <span class="px-2.5 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-xs font-bold font-mono">4 / 10 Chosen</span>
+                    </div>
+
+                    <button onclick="pickRandomWinner()" class="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg hover:brightness-110 transition flex items-center justify-center space-x-2">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        <span>TRIGGER LUCKY DRAW (PICK RANDOM WINNER)</span>
+                    </button>
+
+                    <!-- Winners Table -->
+                    <div class="border border-slate-800 rounded-xl overflow-hidden">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-950 uppercase text-[10px] text-slate-400 font-bold">
+                                <tr>
+                                    <th class="p-2.5">#</th>
+                                    <th class="p-2.5">Winner Phone / UPI</th>
+                                    <th class="p-2.5">Serial Code</th>
+                                    <th class="p-2.5 text-right">Prize</th>
+                                </tr>
+                            </thead>
+                            <tbody id="head-wiper-winners-body" class="divide-y divide-slate-800 font-mono">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+
+        <!-- TAB 5: CLAIMS AUDIT LOG -->
+        <main id="tab-claims-content" class="hidden p-6 space-y-6">
+            
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-base font-bold text-white">Complete Customer Claims & Payout Master Audit</h2>
+                    <button onclick="exportCSVData()" class="px-3 py-1.5 bg-brand-500 text-slate-950 font-bold text-xs rounded-xl hover:bg-brand-400 transition flex items-center space-x-1">
+                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                        <span>Export CSV</span>
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950 uppercase text-[10px] tracking-wider text-slate-400 font-bold border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Transaction ID</th>
+                                <th class="p-3">Customer Phone / UPI</th>
+                                <th class="p-3">Serial Code</th>
+                                <th class="p-3">Amount Paid</th>
+                                <th class="p-3">Payout Gateway</th>
+                                <th class="p-3">Timestamp</th>
+                                <th class="p-3 text-right">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-log-body" class="divide-y divide-slate-800/60 font-mono">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- Webhook Modal -->
+    <div id="webhook-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center">
+                    <i data-lucide="webhook" class="w-4 h-4 mr-2 text-brand-400"></i> Shopify Webhook Endpoint URL
+                </h3>
+                <button onclick="closeWebhookModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+
+            <p class="text-xs text-slate-400 leading-relaxed">
+                Paste this Webhook URL into your Shopify Theme code to securely communicate serial verification requests directly to your backend engine.
+            </p>
+
+            <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex justify-between items-center font-mono text-xs text-brand-400">
+                <span id="webhook-url-text">https://api.velnora.com/v1/shopify/cashback-verify</span>
+                <button onclick="copyWebhook()" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+            </div>
+
+            <button onclick="closeWebhookModal()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Close</button>
+        </div>
+    </div>
+
+    <!-- Toast Component -->
+    <div id="toast-notify" class="fixed bottom-5 right-5 bg-slate-800 text-white text-xs px-4 py-3 rounded-xl border border-slate-700 shadow-2xl opacity-0 translate-y-5 transition-all pointer-events-none z-50 flex items-center space-x-2">
+        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+        <span id="toast-notify-text">Action completed successfully</span>
+    </div>
+
+    <script>
+        // Mock State Data
+        let mockSerials = [
+            { code: 'VEL-1001', status: 'Claimed', value: '₹8.00', upi: '9876543210@paytm', date: '2026-10-12 14:22' },
+            { code: 'VEL-1002', status: 'Claimed', value: '₹5.00', upi: 'rahul@okaxis', date: '2026-10-12 15:05' },
+            { code: 'VEL-1003', status: 'Claimed', value: '₹10.00', upi: 'sunita99@ybl', date: '2026-10-12 15:40' },
+            { code: 'VEL-1004', status: 'Unused', value: '-', upi: '-', date: '-' },
+            { code: 'VEL-1005', status: 'Unused', value: '-', upi: '-', date: '-' },
+            { code: 'VEL-1006', status: 'Blocked', value: '-', upi: '-', date: '-' },
+        ];
+
+        let mockHeadWiperWinners = [
+            { id: 1, upi: '9876543210@paytm', code: 'VEL-1001', prize: 'VELNORA Wiper #1' },
+            { id: 2, upi: 'sunita99@ybl', code: 'VEL-1003', prize: 'VELNORA Wiper #2' },
+            { id: 3, upi: 'amit_clean@upi', code: 'VEL-0982', prize: 'VELNORA Wiper #3' },
+            { id: 4, upi: 'vicky.sharma@okicici', code: 'VEL-0811', prize: 'VELNORA Wiper #4' },
+        ];
+
+        let mockAuditLogs = [
+            { txId: 'TXN-998201', upi: '9876543210@paytm', code: 'VEL-1001', amount: '₹8.00', gateway: 'RazorpayX', time: '14:22 PM', status: 'SUCCESS' },
+            { txId: 'TXN-998202', upi: 'rahul@okaxis', code: 'VEL-1002', amount: '₹5.00', gateway: 'RazorpayX', time: '15:05 PM', status: 'SUCCESS' },
+            { txId: 'TXN-998203', upi: 'sunita99@ybl', code: 'VEL-1003', amount: '₹10.00', gateway: 'RazorpayX', time: '15:40 PM', status: 'SUCCESS' },
+        ];
+
+        // Initialize Lucide Icons & Charts on Load
+        window.onload = function() {
+            lucide.createIcons();
+            renderSerialsTable();
+            renderHeadWiperWinners();
+            renderAuditLogs();
+            initCharts();
+        };
+
+        // Navigation Tabs Switcher
+        function switchTab(tab) {
+            const tabs = ['analytics', 'serials', 'payouts', 'rewards', 'claims'];
+            
+            tabs.forEach(t => {
+                const content = document.getElementById(`tab-${t}-content`);
+                const btn = document.getElementById(`nav-${t}`);
+                
+                if (t === tab) {
+                    content.classList.remove('hidden');
+                    btn.className = "nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold bg-brand-500/10 text-brand-400 border border-brand-500/30 transition";
+                } else {
+                    content.classList.add('hidden');
+                    btn.className = "nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition";
+                }
+            });
+
+            // Update Header Title
+            const titles = {
+                analytics: 'Dashboard Analytics Overview',
+                serials: 'Bottle Serial Code Generator',
+                payouts: 'Payout Gateway API Integration',
+                rewards: 'Rewards & Head Wiper Draw Settings',
+                claims: 'Customer Claims & Payout Audit'
+            };
+            document.getElementById('page-title').innerText = titles[tab];
+        }
+
+        // Render Serials Table
+        function renderSerialsTable() {
+            const tbody = document.getElementById('serials-table-body');
+            tbody.innerHTML = '';
+
+            mockSerials.forEach(s => {
+                let badgeClass = "bg-slate-800 text-slate-400 border-slate-700";
+                if (s.status === 'Claimed') badgeClass = "bg-emerald-950/80 text-emerald-400 border-emerald-500/30";
+                if (s.status === 'Blocked') badgeClass = "bg-red-950/80 text-red-400 border-red-500/30";
+
+                const row = `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="p-3 font-bold text-white">${s.code}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] border font-semibold ${badgeClass}">${s.status}</span></td>
+                        <td class="p-3 text-brand-400 font-bold">${s.value}</td>
+                        <td class="p-3 text-slate-300">${s.upi}</td>
+                        <td class="p-3 text-slate-400">${s.date}</td>
+                        <td class="p-3 text-right">
+                            <button onclick="toggleBlockSerial('${s.code}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] transition">
+                                ${s.status === 'Blocked' ? 'Unblock' : 'Block'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // Generate Batch Serial Numbers
+        function generateBatchSerials() {
+            const prefix = document.getElementById('gen-prefix').value.trim().toUpperCase() || 'VEL';
+            const start = parseInt(document.getElementById('gen-start').value) || 1000;
+            const qty = parseInt(document.getElementById('gen-qty').value) || 10;
+
+            for (let i = 0; i < qty; i++) {
+                const code = `${prefix}-${start + i}`;
+                if (!mockSerials.some(s => s.code === code)) {
+                    mockSerials.unshift({
+                        code: code,
+                        status: 'Unused',
+                        value: '-',
+                        upi: '-',
+                        date: '-'
+                    });
+                }
+            }
+
+            renderSerialsTable();
+            showToast(`Generated ${qty} new serial codes successfully!`);
+        }
+
+        // Filter Table
+        function filterSerialsTable() {
+            const query = document.getElementById('serial-search').value.toLowerCase();
+            const statusFilter = document.getElementById('serial-status-filter').value;
+            const rows = document.querySelectorAll('#serials-table-body tr');
+
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                const matchesQuery = text.includes(query);
+                const matchesStatus = statusFilter === 'ALL' || text.includes(statusFilter.toLowerCase());
+                row.style.display = (matchesQuery && matchesStatus) ? '' : 'none';
+            });
+        }
+
+        function toggleBlockSerial(code) {
+            const target = mockSerials.find(s => s.code === code);
+            if (target) {
+                target.status = target.status === 'Blocked' ? 'Unused' : 'Blocked';
+                renderSerialsTable();
+                showToast(`Status updated for ${code}`);
+            }
+        }
+
+        // Render Winners
+        function renderHeadWiperWinners() {
+            const tbody = document.getElementById('head-wiper-winners-body');
+            tbody.innerHTML = '';
+
+            mockHeadWiperWinners.forEach(w => {
+                const row = `
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="p-2.5 font-bold text-amber-400">#${w.id}</td>
+                        <td class="p-2.5 text-white">${w.upi}</td>
+                        <td class="p-2.5 text-slate-400">${w.code}</td>
+                        <td class="p-2.5 text-right font-bold text-slate-200">${w.prize}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function pickRandomWinner() {
+            if (mockHeadWiperWinners.length >= 10) {
+                showToast("All 10 Head Wiper Winners have already been selected!");
+                return;
+            }
+
+            const claimedSerials = mockSerials.filter(s => s.status === 'Claimed');
+            if (claimedSerials.length === 0) {
+                showToast("No claimed serials available to pick a winner.");
+                return;
+            }
+
+            const randomWinner = claimedSerials[Math.floor(Math.random() * claimedSerials.length)];
+            const newWinner = {
+                id: mockHeadWiperWinners.length + 1,
+                upi: randomWinner.upi,
+                code: randomWinner.code,
+                prize: `VELNORA Wiper #${mockHeadWiperWinners.length + 1}`
+            };
+
+            mockHeadWiperWinners.push(newWinner);
+            renderHeadWiperWinners();
+            document.getElementById('kpi-winners').innerHTML = `${mockHeadWiperWinners.length} <span class="text-xs font-normal text-slate-500">/ 10 Picked</span>`;
+            showToast(`Winner #${newWinner.id} Picked: ${newWinner.upi}!`);
+        }
+
+        // Render Audit Logs
+        function renderAuditLogs() {
+            const tbody = document.getElementById('audit-log-body');
+            const feed = document.getElementById('live-activity-feed');
+            tbody.innerHTML = '';
+            feed.innerHTML = '';
+
+            mockAuditLogs.forEach(log => {
+                const row = `
+                    <tr class="hover:bg-slate-800/30">
+                        <td class="p-3 font-bold text-slate-300">${log.txId}</td>
+                        <td class="p-3 text-white">${log.upi}</td>
+                        <td class="p-3 text-slate-400">${log.code}</td>
+                        <td class="p-3 text-emerald-400 font-bold">${log.amount}</td>
+                        <td class="p-3 text-slate-400">${log.gateway}</td>
+                        <td class="p-3 text-slate-500">${log.time}</td>
+                        <td class="p-3 text-right"><span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-500/30 font-bold">${log.status}</span></td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+
+                const feedItem = `
+                    <div class="py-2.5 flex items-center justify-between text-xs">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+                            <div>
+                                <span class="font-bold text-white">${log.upi}</span>
+                                <span class="text-slate-500 text-[11px] block">Serial: ${log.code} • ${log.time}</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-bold text-emerald-400 block">${log.amount}</span>
+                            <span class="text-[10px] text-slate-500">${log.gateway} Instant</span>
+                        </div>
+                    </div>
+                `;
+                feed.innerHTML += feedItem;
+            });
+        }
+
+        // Initialize Chart.js Graphs
+        function initCharts() {
+            // Trend Chart
+            const ctxTrend = document.getElementById('trendChart').getContext('2d');
+            new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'QR Scans',
+                        data: [120, 190, 210, 280, 310, 420, 380],
+                        borderColor: '#14b8a6',
+                        backgroundColor: 'rgba(20, 184, 166, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: 'Cashbacks Paid',
+                        data: [95, 160, 180, 240, 280, 390, 340],
+                        borderColor: '#6366f1',
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11 } } } },
+                    scales: {
+                        x: { grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+
+            // Reward Pie Chart
+            const ctxPie = document.getElementById('rewardPieChart').getContext('2d');
+            new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['₹5 Tier', '₹7 Tier', '₹10 Tier'],
+                    datasets: [{
+                        data: [50, 35, 15],
+                        backgroundColor: ['#14b8a6', '#6366f1', '#f59e0b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 11 } } } }
+                }
+            });
+        }
+
+        // Probability Sliders Handler
+        function updateProbabilities(id, val) {
+            document.getElementById(`val-${id}`).innerText = `${val}% Probability`;
+        }
+
+        function saveRewardWeights() {
+            showToast("Reward probability weights saved!");
+        }
+
+        // Payout Gateway Selection
+        function selectGateway(gw) {
+            document.getElementById('gateway-status-pill').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span> ${gw}`;
+            showToast(`Switched active payout gateway to ${gw}`);
+        }
+
+        function testGatewayConnection() {
+            showToast("Testing API Connection... Connection SUCCESSFUL! (Latency 140ms)");
+        }
+
+        function saveGatewaySettings() {
+            showToast("Gateway Credentials Saved Securely!");
+        }
+
+        // Modal Control
+        function openWebhookModal() {
+            document.getElementById('webhook-modal').classList.remove('hidden');
+        }
+
+        function closeWebhookModal() {
+            document.getElementById('webhook-modal').classList.add('hidden');
+        }
+
+        function copyWebhook() {
+            navigator.clipboard.writeText(document.getElementById('webhook-url-text').innerText);
+            showToast("Webhook URL copied to clipboard!");
+        }
+
+        // CSV Exporter
+        function exportCSVData() {
+            let csv = "Serial Code,Status,Reward Value,Claimed UPI,Date\n";
+            mockSerials.forEach(s => {
+                csv += `${s.code},${s.status},${s.value},${s.upi},${s.date}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `VELNORA_Cashback_Audit_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            showToast("Exported CSV Audit file!");
+        }
+
+        // Toast Helper
+        function showToast(msg) {
+            const toast = document.getElementById('toast-notify');
+            document.getElementById('toast-notify-text').innerText = msg;
+            toast.classList.remove('opacity-0', 'translate-y-5', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-5', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
